@@ -100,6 +100,7 @@ function addDoseTimePair(taperStepId) {
     let pairContainer = document.getElementById(`doseTimePairs${taperStepId}`);
     let pairCount = pairContainer.getElementsByClassName('doseTimePair').length;
     let newPairDiv = document.createElement('div');
+    newPairDiv.id = `doseTimePair${taperStepId}_${pairCount}`; // Set the correct ID for the div
     newPairDiv.className = 'doseTimePair';
     newPairDiv.innerHTML = `
         <div class='input-group'>
@@ -122,7 +123,7 @@ function addDoseTimePair(taperStepId) {
 }
 
 function removeDoseTimePair(taperStepId, pairId) {
-    let pairDiv = document.getElementById(`doseTime${taperStepId}_${pairId}`);
+    let pairDiv = document.getElementById(`doseTimePair${taperStepId}_${pairId}`); // Corrected to match the ID set on creation
     if (pairDiv) {
         pairDiv.parentNode.removeChild(pairDiv);
     }
@@ -143,6 +144,11 @@ function calculate() {
     let totalTablets = 0;
     let totalDuration = 0;
     let sigResults = []; // This will be an array of instruction sets for each duration
+
+    // Helper function to format the "Take" instruction
+    function formatTakeInstruction(index) {
+        return index === 0 ? "Take" : "then take";
+    }
 
     if (isNaN(tabletStrength) || tabletStrength <= 0) {
         alert('Please enter a valid tablet strength.');
@@ -182,7 +188,8 @@ function calculate() {
                 });
 
                 totalTablets += stepTablets * duration; // Multiply by the duration to get the total for the step
-                let combinedInstructions = `Take ${doseInstructions.join(' and ')}`;
+                let takeInstruction = formatTakeInstruction(sigResults.length);
+                let combinedInstructions = `${takeInstruction} ${doseInstructions.join(' and ')}`;
                 combinedInstructions += ` for ${duration} days`;
                 sigResults.push(combinedInstructions);
             }
@@ -210,9 +217,10 @@ function calculate() {
 
                 // Create the sig sentence for this step
                 let tabletsPerDose = dose / tabletStrength;
-                let doseInstruction = `Take ${formatTablets(tabletsPerDose)} tablet(s) `;
-                let frequencyInstruction = frequency === 1 ? 'once a day ' : frequency === 2 ? 'twice a day ' : `${frequency} times a day `;
-                let durationInstruction = `for ${duration} days`;
+                let takeInstruction = formatTakeInstruction(sigResults.length);
+                let doseInstruction = `${takeInstruction} ${formatTablets(tabletsPerDose)} tablet(s) `;
+                let frequencyInstruction = frequency === 1 ? 'once a day' : frequency === 2 ? 'twice a day' : `${frequency} times a day`;
+                let durationInstruction = ` for ${duration} days`;
                 let stepSig = doseInstruction + frequencyInstruction + durationInstruction;
 
                 // Append the stepSig to the sigResult
