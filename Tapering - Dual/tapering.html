@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="./src/tapering.css">
+    <script src="./src/tapering.js"></script> 
+    <title>Medication Tapering App</title>
+</head>
+<body>
+<div id="taperingCalculator">
+    <h1>Medication Tapering Calculator</h1>
+
+    <form id="taperForm">
+        <label for="calculatorType">Calculator Type:</label>
+        <select id="calculatorType" onchange="setUpVersion(this.value)">
+            <option value="standard">Standard</option>
+            <option value="timeDosePairs">Time-Dose Pairs</option>
+        </select><br>
+
+        <label for="tabletStrength">Tablet Strength (mg):</label>
+        <input type="number" id="tabletStrength"><br>
+
+        <div id="taperScheduleDiv">
+            <h3>Taper Schedule:</h3>
+        </div>
+
+        <button type="button" onclick="addTaperStep()">Add Taper Step</button><br>
+        <button type="button" onclick="calculate()">Calculate</button>
+    </form>
+
+    <div class="resultsBox">
+        <h2>Results:</h2>
+        <p>Total Tablets to Prescribe: <span id="totalTablets"></span></p>
+        <p>Total Duration of Taper: <span id="totalDuration"></span> days</p>
+        <p>Sig: <span id="sigResult"></span></p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,171 @@
+
+/* General Styles */
+#taperingCalculator {
+    font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+    max-width: 800px; /* Max width for the container */
+    margin: auto; /* Center the container */
+}
+
+#taperingCalculator h1, #taperScheduleDiv h2, #taperingCalculator h3 {
+    color: #333;
+}
+
+#taperScheduleDiv {
+    margin: 10px 0px;
+}
+
+/* Form Styles */
+form, .resultsBox {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+}
+
+label {
+    font-weight: bold;
+    display: block; /* Make label take full width */
+    margin-bottom: 5px; /* Space between label and input */
+}
+
+input[type="number"] {
+    width: 100%; /* Allow inputs to fill their containers */
+    height: 40px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    padding: 0 10px;
+}
+
+/* Button Styles */
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    line-height: normal;
+    padding: 10px 15px; /* Padding inside the button */
+    text-align: center;
+    display: block;
+    width: auto; /* Auto width for buttons */
+    margin: 10px 0px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Container for each taper step */
+.taperStep {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd; /* Add border to the taper step */
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f8f9fa; /* Light grey background */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+}
+
+/* Input Group Styles */
+.input-group {
+    margin-bottom: 10px; /* Space between input groups */
+}
+
+/* Remove Button */
+.removeButtonContainer button, .taperStep button {
+    width: auto; /* Auto width for remove button */
+    padding: 5px 10px; /* Smaller padding for remove button */
+}
+
+/* Results Section */
+.resultsBox {
+    margin-top: 10px; /* Space above results box */
+}
+
+#totalTablets, #totalDuration {
+    font-weight: bold;
+}
+
+/* Responsive Design Adjustments */
+
+
+@media (min-width: 768px) {
+    .taperStep {
+        grid-template-columns: repeat(2, 1fr); /* Two columns layout */
+    }
+    .duration-input-group {
+        grid-column: 1 / -1; /* Span all columns */
+    }
+    input[type="number"], button {
+        width: 100%; /* Full width on small screens */
+    }
+
+    .removeButtonContainer button, .taperStep button {
+        width: 100%; /* Full width on small screens */
+    }
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+/* Differentiate 'Add Taper Step' and 'Calculate' Buttons */
+#taperForm button#addTaperStepButton {
+    background-color: #28a745; /* Green color for the 'Add Taper Step' button */
+}
+
+#taperForm button#calculateButton {
+    background-color: #17a2b8; /* Blue color for the 'Calculate' button */
+}
+
+
+/* Button hover effects for better user experience */
+button:hover {
+    filter: brightness(95%); /* Slightly darken button on hover */
+}
+
+/* Select Styles */
+#calculatorType {
+    width: 100%; /* Full width to match the input fields */
+    height: 40px; /* Match the height of the input fields */
+    margin-bottom: 10px; /* Consistent spacing below the element */
+    font-size: 16px; /* Font size to match input fields */
+    padding: 0 10px; /* Padding to match input fields */
+    border: 1px solid #ccc; /* Border to match input fields */
+    border-radius: 4px; /* Rounded corners to match the form elements */
+    background-color: #fff; /* Background color to match input fields */
+    -webkit-appearance: none; /* Remove default styling on some browsers */
+    -moz-appearance: none; /* Remove default styling on some browsers */
+    appearance: none; /* Remove default styling to ensure consistency */
+}
+
+/* Custom arrow for the select element */
+#calculatorType {
+    background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+}
+
+/* Style for time select elements within the time-dose pairs */
+[id*="time"] {
+    width: 100%; /* Full width to match other input fields */
+    height: 40px; /* Match the height of other input fields */
+    font-size: 16px; /* Font size to match other input fields */
+    padding: 0 10px; /* Padding to match other input fields */
+    border: 1px solid #ccc; /* Border to match other input fields */
+    border-radius: 4px; /* Rounded corners to match the form elements */
+    background-color: #fff; /* Background color to match other input fields */
+    -webkit-appearance: none; /* Remove default styling on some browsers */
+    -moz-appearance: none; /* Remove default styling on some browsers */
+    appearance: none; /* Remove default styling to ensure consistency */
+}
+
+/* Custom arrow for the time select elements */
+[id*="time"] {
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+}
