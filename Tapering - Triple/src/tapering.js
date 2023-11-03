@@ -343,35 +343,55 @@ function generateSchedule(taperingData, startDate) {
     taperingData.forEach((step) => {
         if (currentVersion === 'variableStrength') {
             for (let i = 0; i < step.duration; i++) {
+                let tabletCount = Math.ceil(step.dose / step.strength);
+                let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
+                let tabletDescription = `${tabletCount} x ${step.strength}mg ${tabletWord}`;
+                let dosageDescription = `${step.dose}mg (${tabletDescription})`;
+                // Do not append "/day" here, handle it in the createPDF function
+                let frequencyDescription = `${step.frequency} ${step.frequency > 1 ? 'times' : 'time'}`; 
+
                 schedule.push({
                     date: formatDate(currentDate),
-                    dosage: step.dose,
-                    strength: step.strength,
-                    frequency: step.frequency // Now includes frequency
+                    dosage: dosageDescription,
+                    frequency: frequencyDescription
                 });
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         } else if (currentVersion === 'timeDosePairs') {
-            // Handle the time-dose pairs version
+            // Assume `tabletStrength` is available and is applicable for each dose
+            let tabletStrengthValue = Number(tabletStrength.value); // This needs to be defined appropriately
+        
             for (let i = 0; i < step.duration; i++) {
                 step.pairsData.forEach((pair) => {
+                    let tabletCount = Math.ceil(pair.dose / tabletStrengthValue);
+                    let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
+                    let tabletDescription = `${tabletCount} x ${tabletStrengthValue}mg ${tabletWord}`;
+                    let dosageDescription = `${pair.dose}mg (${tabletDescription})`;
+        
                     schedule.push({
-                        date: formatDate(currentDate), // Use the formatDate function
-                        dosage: pair.dose,
+                        date: formatDate(currentDate),
+                        dosage: dosageDescription,
                         timeOfDay: pair.time
                     });
                 });
-                currentDate.setDate(currentDate.getDate() + 1); // increment the day
+                currentDate.setDate(currentDate.getDate() + 1); // Increment the day
             }
         } else {
             // Handle the standard version
             for (let i = 0; i < step.duration; i++) {
+                let tabletStrengthValue = Number(tabletStrength.value); 
+                let tabletCount = Math.ceil(step.dose / tabletStrengthValue);
+                let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
+                let tabletDescription = `${tabletCount} x ${tabletStrengthValue}mg ${tabletWord}`;
+                let dosageDescription = `${step.dose}mg (${tabletDescription})`;
+                let frequencyDescription = `${step.frequency} ${step.frequency > 1 ? 'times' : 'time'}`;
+            
                 schedule.push({
-                    date: formatDate(currentDate), // Use the formatDate function
-                    dosage: step.dose,
-                    frequency: step.frequency
+                    date: formatDate(currentDate),
+                    dosage: dosageDescription,
+                    frequency: frequencyDescription // "per day" will be handled in createPDF function
                 });
-                currentDate.setDate(currentDate.getDate() + 1); // increment the day
+                currentDate.setDate(currentDate.getDate() + 1);
             }
         }
     });
@@ -385,47 +405,149 @@ function createPDF(schedule, medicationName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    let title = 'Medication Schedule';
-    if (medicationName) {
-        title += ' for ' + medicationName;
-    }
-
-    doc.setFontSize(18);
-    doc.text(title, 14, 22);
-
-    doc.setFontSize(11);
+    // Constants for layout
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const lineHeight = 10;
+    const headerHeight = 22;
     let yOffset = 30; // Initial Y-offset for the first line after the title
 
-    schedule.forEach((entry, index) => {
-        let scheduleText = '';
-        if (currentVersion === 'variableStrength') {
-            // Calculate the number of tablets and the total dosage
-            const tablets = entry.dosage / entry.strength;
-            const totalDosage = tablets * entry.strength;
-            // Convert the tablet count to a word for 1-9 tablets, or use the number directly if more
-            const tabletCountText = tablets <= 9 ? ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][Math.round(tablets)] : Math.round(tablets).toString();
-            scheduleText = `${entry.date}: Take ${tabletCountText} ${entry.strength}mg tablet${tablets !== 1 ? 's' : ''} (${totalDosage}mg total)`;
-        } else if (currentVersion === 'timeDosePairs') {
-            scheduleText = `${entry.date}: Take ${entry.dosage} mg in the ${entry.timeOfDay}`;
-        } else {
-            scheduleText = `${entry.date}: Take ${entry.dosage} mg ${entry.frequency} time(s) a day`;
-        }
+    // Column positions
+    const dateColX = margin;
+    const doseColX = pageWidth / 3; // One-third of the way across the page
+    const timeOfDayColX = (2 * pageWidth) / 3; // Two-thirds of the way across the page
 
-        // Check if we need to add a new page
-        if (yOffset >= (doc.internal.pageSize.height - 10)) {
+    // Set the font for the entire document
+    doc.setFont('Helvetica', '');
+
+    // Function to add headers
+    const addHeaders = () => {
+        doc.setFontSize(18);
+        const scheduleText = 'Medication Schedule';
+        doc.text(scheduleText, margin, headerHeight);
+        
+        if (medicationName) {
+            const padding = 5;
+            const scheduleWidth = doc.getTextWidth(scheduleText) + padding;
+            const forXPosition = margin + scheduleWidth;
+            doc.setFontSize(14);
+            const forTextWidth = doc.getTextWidth(`for ${medicationName}`);
+            if (forXPosition + forTextWidth <= pageWidth - margin) {
+                // If it fits, draw 'for ...' text
+                doc.text(`for ${medicationName}`, forXPosition, headerHeight);
+            } else {
+                // If it doesn't fit, reduce font size or split into two lines
+                while (doc.getTextWidth(`for ${medicationName}`) + forXPosition > pageWidth - margin) {
+                    doc.setFontSize(doc.getFontSize() - 1);
+                }
+                doc.text(`for ${medicationName}`, forXPosition, headerHeight);
+                doc.setFontSize(11);
+            }
+        }
+        // Set font size back to 11 for the rest of the header
+        doc.setFontSize(11);
+    };
+
+    // Function to add footers
+    const addFooters = () => {
+        doc.setFontSize(10);
+        doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin);
+    };
+
+    // Function to check and add new page if needed
+    const checkAddNewPage = () => {
+        if (yOffset >= (pageHeight - margin)) {
             doc.addPage();
-            yOffset = 10; // Reset yOffset for the new page
+            yOffset = margin;
+            addHeaders();
+            addFooters();
         }
+    };
 
-        doc.text(scheduleText, 14, yOffset);
-        yOffset += 10; // Increase the Y-offset for the next line
+    // Add headers to the first page
+    addHeaders();
+
+    // Add column headers
+    doc.setFontSize(12);
+    doc.text('Date', dateColX, yOffset);
+    doc.text('Dose (mg)', doseColX, yOffset);
+    // Change the third column based on the calculator version
+    if (currentVersion === 'timeDosePairs') {
+        doc.text('Time of Day', timeOfDayColX, yOffset);
+    } else {
+        doc.text('Times per Day', timeOfDayColX, yOffset);
+    }
+
+    yOffset += lineHeight; // Move down one line
+
+    doc.setFontSize(11); // Reset font size for entries
+
+    let previousDate = ""; // Keep track of the date we're on
+    let colorFlip = false; // Used to flip the color for each day
+
+    // Add the schedule entries
+    schedule.forEach((entry, index) => {
+        // Apply the alternating background color
+        if (index % 2 === 0) { // Color every other line for better readability
+            doc.setFillColor(240, 240, 240); // Light grey
+            doc.rect(margin, yOffset, pageWidth - (2 * margin), lineHeight, 'F');
+        }
+    
+        // Add the date and dose in separate columns
+        doc.text(entry.date, dateColX, yOffset + lineHeight / 2);
+    
+        // Calculate the dose text, which includes the dosage and the number of tablets
+        let doseText;
+        if (currentVersion === 'variableStrength') {
+            doseText = entry.dosage; // `entry.dosage` already includes all the necessary information
+        } else if (currentVersion === 'standard') {
+            doseText = entry.dosage; // Do not append 'mg' for the standard version, as it's already included
+        } else {
+            // Append 'mg' for the other versions, if necessary
+            doseText = `${entry.dosage}`;
+        }        
+    
+        doc.text(doseText, doseColX, yOffset + lineHeight / 2);
+    
+        // For the timeDosePairs version, add the time of day
+        if (currentVersion === 'timeDosePairs') {
+            doc.text(entry.timeOfDay, timeOfDayColX, yOffset + lineHeight / 2);
+        } else {
+            // For standard and variableStrength, add the frequency (times per day)
+            let frequencyText = currentVersion === 'variableStrength' || currentVersion === 'standard' ?
+            `${entry.frequency} per day` : // For these versions, just append 'per day'
+            entry.frequency; // For timeDosePairs, use the existing frequency text
+
+            doc.text(frequencyText, timeOfDayColX, yOffset + lineHeight / 2);
+        }
+    
+        // Increment the Y-offset for the next line
+        yOffset += lineHeight;
+    
+        // Check if a new page is needed
+        if (yOffset >= pageHeight - margin) {
+            doc.addPage();
+            yOffset = margin + headerHeight; // Reset Y-offset for new page
+            // Re-add headers for new page
+            doc.setFontSize(12);
+            doc.text('Date', dateColX, yOffset);
+            doc.text('Dose (mg)', doseColX, yOffset);
+            if (currentVersion === 'timeDosePairs') {
+                doc.text('Time of Day', timeOfDayColX, yOffset);
+            } else {
+                doc.text('Times per Day', timeOfDayColX, yOffset);
+            }
+            yOffset += lineHeight; // Move down one line after headers
+        }
     });
+
+    // Add footers to the last page
+    addFooters();
 
     // Save the created PDF
     doc.save('tapering_schedule.pdf');
 }
-
-
 
 
 
