@@ -15,7 +15,7 @@
 }
 
 /* Form Styles */
-form, .resultsBox {
+form, .resultsBox, .scheduleStartBox {
     background-color: #fff;
     border: 1px solid #ccc;
     padding: 20px;
@@ -30,7 +30,7 @@ label {
     margin-bottom: 5px; /* Space between label and input */
 }
 
-input[type="number"] {
+input[type="number"], input[type="text"], input[type="date"] {
     width: 100%; /* Allow inputs to fill their containers */
     height: 40px;
     margin-bottom: 10px;
@@ -72,9 +72,15 @@ button {
 }
 
 /* Remove Button */
-.removeButtonContainer button, .taperStep button {
+.removeButtonContainer button {
     width: auto; /* Auto width for remove button */
-    padding: 5px 10px; /* Smaller padding for remove button */
+
+}
+
+
+
+.removeButtonContainer {
+    margin-top: 15px;
 }
 
 /* Results Section */

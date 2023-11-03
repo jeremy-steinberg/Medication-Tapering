@@ -3,6 +3,7 @@
 <head>
     <link rel="stylesheet" type="text/css" href="./src/tapering.css">
     <script src="./src/tapering.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <title>Medication Tapering App</title>
 </head>
 <body>
@@ -32,8 +33,20 @@
         <p>Total Tablets to Prescribe: <span id="totalTablets"></span></p>
         <p>Total Duration of Taper: <span id="totalDuration"></span> days</p>
         <p>Sig: <span id="sigResult"></span></p>
+   </div>
+    <div class="scheduleStartBox">
+        <h2>Schedule PDF Download:</h2>
+        <p>Medication Name (optional): <input type="text" id="medicationName" name="medication-name"></p>
+        <p>Select Start Date: <input type="date" id="startDatePicker" name="start-date" required></p>
+        <button id="downloadPDFButton" type="button">Download Schedule as PDF</button>
     </div>
 </div>
 
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDatePicker').value = today;
+    });
+</script>
 </html>

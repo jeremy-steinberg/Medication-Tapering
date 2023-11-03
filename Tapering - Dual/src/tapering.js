@@ -46,12 +46,12 @@ function addTaperStep() {
                                 <input type='number' id='dose${taperStepCount}' class='doseInput'>
                             </div>
                             <div class='input-group'>
-                                <label for='duration${taperStepCount}'>Duration (days):</label>
-                                <input type='number' id='duration${taperStepCount}'>
-                            </div>
-                            <div class='input-group'>
                                 <label for='frequency${taperStepCount}'>Times per Day:</label>
                                 <input type='number' id='frequency${taperStepCount}'>
+                            </div>
+                            <div class='input-group'>
+                            <label for='duration${taperStepCount}'>Duration (days):</label>
+                            <input type='number' id='duration${taperStepCount}'>
                             </div>
                             <div class='input-group removeButtonContainer'>
                                 <button type='button' onclick='removeTaperStep(${taperStepCount})'>Remove</button>
@@ -241,3 +241,157 @@ function calculate() {
     document.getElementById('totalDuration').innerText = `${totalDuration}`;
     document.getElementById('sigResult').innerText = sigResults.join('; ').trim();
 }
+
+// New function to gather tapering data from the form
+function gatherTaperingData() {
+    let taperingData = [];
+
+    for (let i = 1; i <= taperStepCount; i++) {
+        if (currentVersion === 'timeDosePairs') {
+            // Handle the time-dose pairs version
+            let duration = document.getElementById(`duration${i}`).value;
+            let doseTimePairsContainer = document.getElementById(`doseTimePairs${i}`);
+            let doseTimePairs = doseTimePairsContainer.getElementsByClassName('doseTimePair');
+            
+            let pairsData = [];
+            for (let pair of doseTimePairs) {
+                let dose = pair.querySelector('.doseInput').value;
+                let time = pair.querySelector('select').value;
+                pairsData.push({ dose, time });
+            }
+
+            taperingData.push({ duration, pairsData });
+        } else {
+            // Handle the standard version
+            let dose = document.getElementById(`dose${i}`).value;
+            let frequency = document.getElementById(`frequency${i}`).value;
+            let duration = document.getElementById(`duration${i}`).value;
+            taperingData.push({ dose, frequency, duration });
+        }
+    }
+
+    return taperingData;
+}
+
+
+// Utility function to format dates as DD-MM-YYYY
+function formatDate(date) {
+    let day = date.getDate().toString().padStart(2, '0');
+    let month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth is zero-indexed
+    let year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+}
+
+// New function to generate a schedule from tapering data
+function generateSchedule(taperingData, startDate) {
+    let schedule = [];
+    let currentDate = new Date(startDate);
+
+    taperingData.forEach((step) => {
+        if (currentVersion === 'timeDosePairs') {
+            // Handle the time-dose pairs version
+            for (let i = 0; i < step.duration; i++) {
+                step.pairsData.forEach((pair) => {
+                    schedule.push({
+                        date: formatDate(currentDate), // Use the formatDate function
+                        dosage: pair.dose,
+                        timeOfDay: pair.time
+                    });
+                });
+                currentDate.setDate(currentDate.getDate() + 1); // increment the day
+            }
+        } else {
+            // Handle the standard version
+            for (let i = 0; i < step.duration; i++) {
+                schedule.push({
+                    date: formatDate(currentDate), // Use the formatDate function
+                    dosage: step.dose,
+                    frequency: step.frequency
+                });
+                currentDate.setDate(currentDate.getDate() + 1); // increment the day
+            }
+        }
+    });
+
+    return schedule;
+}
+
+
+// create a PDF of the schedule
+function createPDF(schedule, medicationName) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let title = 'Medication Schedule';
+    if (medicationName) {
+        title += ' for ' + medicationName;
+    }
+
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+
+    doc.setFontSize(11);
+    let yOffset = 30; // Initial Y-offset for the first line after the title
+
+    schedule.forEach((entry, index) => {
+        let scheduleText = '';
+        if (currentVersion === 'timeDosePairs') {
+            scheduleText = `${entry.date}: Take ${entry.dosage} mg in the ${entry.timeOfDay}`;
+        } else {
+            scheduleText = `${entry.date}: Take ${entry.dosage} mg ${entry.frequency} time(s) a day`;
+        }
+
+        // Check if we need to add a new page
+        if (yOffset >= (doc.internal.pageSize.height - 10)) {
+            doc.addPage();
+            yOffset = 10; // Reset yOffset for the new page
+        }
+
+        doc.text(scheduleText, 14, yOffset);
+        yOffset += 10; // Increase the Y-offset for the next line
+    });
+
+    // Save the created PDF
+    doc.save('tapering_schedule.pdf');
+}
+
+
+
+// function to handle the PDF download
+function calculateAndDownloadPDF() {
+    // Check if the tablet strength is entered
+    const tabletStrength = document.getElementById('tabletStrength').value;
+    if (!tabletStrength) {
+        alert("Please enter the tablet strength.");
+        return;
+    }
+
+    // Get the medication name from the input field
+    let medicationName = document.getElementById('medicationName').value.trim();
+
+    // Read the start date from the date picker and validate it
+    let startDateInput = document.getElementById('startDatePicker').value;
+    if (!startDateInput) {
+        alert("Please select a start date.");
+        return;
+    }
+
+    let startDate = new Date(startDateInput);
+    if (isNaN(startDate.getTime())) {
+        alert("Invalid start date. Please select a valid date.");
+        return;
+    }
+
+    // Generate the tapering data from the form inputs
+    const taperingData = gatherTaperingData();
+    // Generate the schedule using the user-selected start date
+    const schedule = generateSchedule(taperingData, startDate);
+    // Create and download the PDF with the schedule and the medication name
+    createPDF(schedule, medicationName);
+}
+
+// Add event listener to the 'DOMContentLoaded' event to attach the PDF download handler
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadButton = document.getElementById('downloadPDFButton');
+    downloadButton.addEventListener('click', calculateAndDownloadPDF);
+});
