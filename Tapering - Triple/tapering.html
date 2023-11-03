@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="./src/tapering.css">
+    <script src="./src/tapering.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>Medication Tapering App</title>
+</head>
+<body>
+<div id="taperingCalculator">
+    <h1>Medication Tapering Calculator</h1>
+
+    <form id="taperForm">
+        <label for="calculatorType">Calculator Type:</label>
+        <select id="calculatorType" onchange="setUpVersion(this.value)">
+            <option value="standard">Standard</option>
+            <option value="timeDosePairs">Time-Dose Pairs</option>
+            <option value="variableStrength">Variable Strength Taper</option>
+        </select><br>
+        <div id="tabletStrengthContainer">
+            <label for="tabletStrength">Tablet Strength (mg):</label>
+            <input type="number" id="tabletStrength"><br>
+        </div>
+
+        <div id="taperScheduleDiv">
+            <h3>Taper Schedule:</h3>
+        </div>
+
+        <button type="button" onclick="addTaperStep()">Add Taper Step</button><br>
+        <button type="button" onclick="calculate()">Calculate</button>
+    </form>
+
+    <div class="resultsBox">
+        <h2>Results:</h2>
+        <p>Total Tablets to Prescribe: <span id="totalTablets"></span></p>
+        <p>Total Duration of Taper: <span id="totalDuration"></span> days</p>
+        <p>Sig: <span id="sigResult"></span></p>
+   </div>
+    <div class="scheduleStartBox">
+        <h2>Schedule PDF Download:</h2>
+        <p>Medication Name (optional): <input type="text" id="medicationName" name="medication-name"></p>
+        <p>Select Start Date: <input type="date" id="startDatePicker" name="start-date" required></p>
+        <button id="downloadPDFButton" type="button">Download Schedule as PDF</button>
+    </div>
+</div>
+
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDatePicker').value = today;
+    });
+</script>
+</html>
