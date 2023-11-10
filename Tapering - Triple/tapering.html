@@ -9,6 +9,13 @@
 <body>
 <div id="taperingCalculator">
     <h1>Medication Tapering Calculator</h1>
+    <button onclick="toggleInfoBar()">
+        More Info <span id="toggleIcon"><svg style="width: 20px; height: 7px; padding-left: 5px;" viewBox="0 0 12 8"><polygon points="1.4,7.4 0,6 6,0 12,6 10.6,7.4 6,2.8" fill="#fff"></polygon></svg></span>
+    </button>
+    
+    <div id="infoBar" style="display: none;">
+        <p>Welcome to the Medication Tapering Calculator. This tool is designed to assist doctors in creating tapering schedules when prescribing. There are three tapering calculation methods: standard (fixed strength tablets and fixed dosing within each day), time-dose pairs (different dosing at different times of the day), and variable strength (different strength tablets across the schedule) tapers. Please ensure accurate input of medication strengths and dosages to generate a precise tapering plan. Remember, this calculator is a guide only.</p>
+    </div>
 
     <form id="taperForm">
         <label for="calculatorType">Calculator Type:</label>
@@ -50,5 +57,6 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('startDatePicker').value = today;
     });
+
 </script>
 </html>

@@ -176,3 +176,33 @@ button:hover {
     background-size: 12px;
 }
 
+/* Info Bar Styles */
+#infoBar {
+    background-color: #f2f2f2; /* Light gray background */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    display: none; /* Hide by default */
+}
+
+/* Hidden Class */
+.hidden {
+    display: none;
+}
+
+/* Visible Class */
+.visible {
+    display: block;
+}
+/* Info Bar Styles */
+#infoBar {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+.openButton {
+    background-color: #4400ff94;
+  }

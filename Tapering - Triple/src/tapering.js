@@ -140,7 +140,7 @@ function calculate() {
 
     // Helper function to format the "Take" instruction
     function formatTakeInstruction(index) {
-        return index === 0 ? "Take" : "then take";
+        return index === 0 ? "Take" : "then";
     }
 
 
@@ -592,3 +592,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadButton = document.getElementById('downloadPDFButton');
     downloadButton.addEventListener('click', calculateAndDownloadPDF);
 });
+
+function toggleInfoBar() {
+    var infoBar = document.getElementById("infoBar");
+    var toggleButton = document.querySelector("button[onclick='toggleInfoBar()']");
+    var toggleIcon = document.getElementById("toggleIcon");
+
+    // Define the SVG icons for open and close states
+    var openIcon = '<svg style="width: 20px; height: 7px; padding-left: 5px;" viewBox="0 0 12 8"><polygon points="1.4,7.4 0,6 6,0 12,6 10.6,7.4 6,2.8" fill="#fff"></polygon></svg>';
+    var closeIcon = '<svg style="width: 20px; height: 7px; padding-left: 5px;" viewBox="0 0 12 8"><path d="M1.4.6L0 2l6 6 6-6L10.6.6 6 5.2" fill-rule="nonzero" fill="#fff"></path></svg>';
+
+    if (infoBar.style.display === "none") {
+        infoBar.style.display = "block";
+        toggleIcon.innerHTML = closeIcon; // Set to close icon when opened
+        toggleButton.classList.remove("closedButton");
+        toggleButton.classList.add("openButton");
+    } else {
+        infoBar.style.display = "none";
+        toggleIcon.innerHTML = openIcon; // Set to open icon when closed
+        toggleButton.classList.remove("openButton");
+        toggleButton.classList.add("closedButton");
+    }
+}
