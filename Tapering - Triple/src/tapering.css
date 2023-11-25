@@ -4,6 +4,10 @@
     font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
     max-width: 800px; /* Max width for the container */
     margin: auto; /* Center the container */
+    padding: 30px;
+    background-color: #f4f4f4;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
 #taperingCalculator h1, #taperScheduleDiv h2, #taperingCalculator h3 {
@@ -17,7 +21,7 @@
 /* Form Styles */
 form, .resultsBox, .scheduleStartBox {
     background-color: #fff;
-    border: 1px solid #ccc;
+
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -177,14 +181,7 @@ button:hover {
 }
 
 /* Info Bar Styles */
-#infoBar {
-    background-color: #f2f2f2; /* Light gray background */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    margin-top: 10px;
-    display: none; /* Hide by default */
-}
+
 
 /* Hidden Class */
 .hidden {
@@ -197,12 +194,37 @@ button:hover {
 }
 /* Info Bar Styles */
 #infoBar {
-    background-color: #f9f9f9;
+    background-color: white;
     border: 1px solid #ddd;
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 4px;
+    margin-top: 10px;
+    display: none; /* Hide by default */
 }
 .openButton {
     background-color: #4400ff94;
   }
+
+
+  #calc_source {
+    font-size: 12px;
+    font-style:italic;
+    color: #666;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+#calc_source p {
+    margin: 5px 0;
+}
+
+#calc_source a {
+    color: #06c;
+    text-decoration: none;
+}
+
+#calc_source a:hover {
+    text-decoration: underline;
+}
