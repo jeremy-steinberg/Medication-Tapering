@@ -1,6 +1,6 @@
-
 // Global variables
 let taperStepCount = 0;
+let globalPairCounter = 0; // FIX: New global counter to ensure unique IDs for pairs
 let currentVersion = 'standard'; // Default version
 
 function setUpVersion(selectedVersion) {
@@ -11,7 +11,6 @@ function setUpVersion(selectedVersion) {
     currentVersion = selectedVersion;
 
     const tabletStrengthContainer = document.getElementById('tabletStrengthContainer');
-
 
     if (currentVersion === 'variableStrength') {
         tabletStrengthContainer.style.display = 'none'; // Hide the tablet strength input field
@@ -34,8 +33,7 @@ function addTaperStep() {
                             </div>
                             <div id="doseTimePairsContainer${taperStepCount}">
                                 <div id="doseTimePairs${taperStepCount}" class="doseTimePairs">
-                                    <!-- Dose-time pairs will be added here -->
-                                </div>
+                                    </div>
                                 <button type='button' onclick='addDoseTimePair(${taperStepCount})'>Add Dose-Time Pair</button>
                             </div>
                             <button type='button' onclick='removeTaperStep(${taperStepCount})'>Remove Taper Step</button>`;
@@ -85,79 +83,82 @@ function removeTaperStep(stepNumber) {
     const element = document.getElementById(`taperStep${stepNumber}`);
     if (element) {
         element.parentNode.removeChild(element);
-        taperStepCount--; // Decrement the taper step count
+        // FIX: Do NOT decrement taperStepCount. This prevents ID collisions and loop errors.
     }
 }
 
 function addDoseTimePair(taperStepId) {
+    globalPairCounter++; 
     let pairContainer = document.getElementById(`doseTimePairs${taperStepId}`);
-    let pairCount = pairContainer.getElementsByClassName('doseTimePair').length;
+    
     let newPairDiv = document.createElement('div');
-    newPairDiv.id = `doseTimePair${taperStepId}_${pairCount}`; // Set the correct ID for the div
+    newPairDiv.id = `doseTimePair_Unique${globalPairCounter}`; 
     newPairDiv.className = 'doseTimePair';
+
+    // Generate a unique ID that contains the word "time"
+    // This ensures the CSS selector [id*="time"] applies the custom arrow style
+    let uniqueTimeId = `time_${globalPairCounter}`;
+
     newPairDiv.innerHTML = `
         <div class='input-group'>
-            <label for='dose${taperStepId}_${pairCount}'>Dose (mg):</label>
-            <input type='number' id='dose${taperStepId}_${pairCount}' class='doseInput'>
+            <label>Dose (mg):</label>
+            <input type='number' class='doseInput'>
         </div>
         <div class='input-group'>
-            <label for='time${taperStepId}_${pairCount}'>Time of Day:</label>
-            <select id='time${taperStepId}_${pairCount}'>
-                <option value="morning">Morning</option>
-                <option value="midday">Midday</option>
-                <option value="evening">Evening</option>
-                <option value="night">Night</option>
+            <label for='${uniqueTimeId}'>Time of Day:</label>
+            <select id='${uniqueTimeId}'>
+                <option value="morning">Morning 🌅</option>
+                <option value="midday">Midday 🌤️</option>
+                <option value="evening">Evening 🌆</option>
+                <option value="night">Night 🌙</option>
             </select>
         </div>
-        <button type='button' onclick='removeDoseTimePair(${taperStepId}, ${pairCount})'>Remove Dose-Time Pair</button>
+        <button type='button' onclick='removeDoseTimePair("${newPairDiv.id}")'>Remove Dose-Time Pair</button>
     `;
 
     pairContainer.appendChild(newPairDiv);
 }
 
-function removeDoseTimePair(taperStepId, pairId) {
-    let pairDiv = document.getElementById(`doseTimePair${taperStepId}_${pairId}`); // Corrected to match the ID set on creation
+function removeDoseTimePair(pairElementId) {
+    let pairDiv = document.getElementById(pairElementId);
     if (pairDiv) {
         pairDiv.parentNode.removeChild(pairDiv);
     }
 }
 
 function formatTablets(tablets) {
-    if (tablets % 1 === 0) { // If the number is an integer
-        return tablets.toString(); // Return as a string without decimals
-    } else {
-        return tablets.toFixed(1); // Otherwise, round to 1 decimal place
-    }
+    return parseFloat(tablets.toFixed(2)).toString();
 }
 
 
 function calculate() {
     let isValid = true;
-    let totalTabletsPerStrength = {}; // Object to store total tablets per strength
+    let totalTabletsPerStrength = {}; 
     let totalTablets = 0;
     let totalDuration = 0;
-    let sigResults = []; // This will be an array of instruction sets for each duration
+    let sigResults = []; 
 
-    // Helper function to format the "Take" instruction
     function formatTakeInstruction(index) {
         return index === 0 ? "Take" : "then";
     }
 
-
-    // Skip the tablet strength check if the current version is 'variableStrength'
-    let tabletStrength = 1; // Default value to bypass the check
+    let tabletStrength = 1; 
 
     if (currentVersion !== 'variableStrength') {
         tabletStrength = parseFloat(document.getElementById('tabletStrength').value);
+        // FIX: Added validation for <= 0 to prevent Infinity
         if (isNaN(tabletStrength) || tabletStrength <= 0) {
-            alert('Please enter a valid tablet strength.');
+            alert('Please enter a valid tablet strength greater than 0.');
             return;
         }
     }
     
+    // FIX: Loop up to the count, but check if element exists (handling deleted steps)
+    for (let i = 1; i <= taperStepCount; i++) {
+        // Skip this iteration if the step was deleted
+        if (!document.getElementById(`taperStep${i}`)) continue;
 
-    if (currentVersion === 'variableStrength') {
-        for (let i = 1; i <= taperStepCount; i++) {
+        if (currentVersion === 'variableStrength') {
             const strengthElement = document.getElementById(`stepStrength${i}`);
             const doseElement = document.getElementById(`dose${i}`);
             const frequencyElement = document.getElementById(`frequency${i}`);
@@ -177,19 +178,17 @@ function calculate() {
                 totalDuration += duration;
                 let dailyTablets = (dose * frequency) / strength;
                 totalTabletsPerStrength[strength] = (totalTabletsPerStrength[strength] || 0) + dailyTablets * duration;
-    
+
+                
                 let takeInstruction = formatTakeInstruction(sigResults.length);
                 let tabletsPerDose = dose / strength;
-                let doseInstruction = `${takeInstruction} ${numberToWords(Math.ceil(tabletsPerDose))} ${strength}mg tablet(s) `;
+                let doseInstruction = `${takeInstruction} ${tabletsPerDose} ${strength}mg tablet(s) `;
                 let frequencyInstruction = frequency === 1 ? 'once a day' : frequency === 2 ? 'twice a day' : `${numberToWords(frequency)} times a day`;
                 let durationInstruction = ` for ${duration} days`;
                 let stepSig = doseInstruction + frequencyInstruction + durationInstruction;
                 sigResults.push(stepSig);
             }
-        }
-    } else if (currentVersion === 'timeDosePairs') {
-        // Calculation logic for the time-dose pairs version
-        for (let i = 1; i <= taperStepCount; i++) {
+        } else if (currentVersion === 'timeDosePairs') {
             const durationElement = document.getElementById(`duration${i}`);
             if (durationElement) {
                 const duration = parseFloat(durationElement.value);
@@ -201,7 +200,9 @@ function calculate() {
 
                 let stepTablets = 0;
                 let doseInstructions = [];
+                // Look for pairs specifically inside this step
                 let doseTimePairs = document.querySelectorAll(`#taperStep${i} .doseTimePair`);
+                
                 doseTimePairs.forEach(pair => {
                     let doseInput = pair.querySelector('.doseInput');
                     let timeSelect = pair.querySelector('select');
@@ -215,20 +216,18 @@ function calculate() {
                     }
 
                     let tablets = dose / tabletStrength;
-                    stepTablets += tablets; // Accumulate tablets per dose-time pair
+                    stepTablets += tablets; 
                     doseInstructions.push(`${formatTablets(tablets)} tablet(s) in the ${time}`);
                 });
 
-                totalTablets += stepTablets * duration; // Multiply by the duration to get the total for the step
+                totalTablets += stepTablets * duration; 
                 let takeInstruction = formatTakeInstruction(sigResults.length);
                 let combinedInstructions = `${takeInstruction} ${doseInstructions.join(' and ')}`;
                 combinedInstructions += ` for ${duration} days`;
                 sigResults.push(combinedInstructions);
             }
-        }
-    } else {
-        // Calculation logic for the standard version
-        for (let i = 1; i <= taperStepCount; i++) {
+        } else {
+            // Standard Version
             const doseElement = document.getElementById(`dose${i}`);
             const durationElement = document.getElementById(`duration${i}`);
             const frequencyElement = document.getElementById(`frequency${i}`);
@@ -247,7 +246,6 @@ function calculate() {
                 let dailyTablets = (dose * frequency) / tabletStrength;
                 totalTablets += dailyTablets * duration;
 
-                // Create the sig sentence for this step
                 let tabletsPerDose = dose / tabletStrength;
                 let takeInstruction = formatTakeInstruction(sigResults.length);
                 let doseInstruction = `${takeInstruction} ${formatTablets(tabletsPerDose)} tablet(s) `;
@@ -255,7 +253,6 @@ function calculate() {
                 let durationInstruction = ` for ${duration} days`;
                 let stepSig = doseInstruction + frequencyInstruction + durationInstruction;
 
-                // Append the stepSig to the sigResult
                 sigResults.push(stepSig);
             }
         }
@@ -266,15 +263,15 @@ function calculate() {
         return;
     }
 
-    let tabletsNeeded = Math.ceil(totalTablets); // Round up to the nearest whole tablet
+    let tabletsNeeded = Math.ceil(totalTablets); 
 
     if (currentVersion === 'variableStrength') {
         let totalTabletsDisplay = '';
         for (const [strength, tablets] of Object.entries(totalTabletsPerStrength)) {
-            let roundedTablets = Math.ceil(tablets); // Round up to the nearest whole tablet
+            let roundedTablets = Math.ceil(tablets); 
             totalTabletsDisplay += `${roundedTablets} tablet(s) of ${strength}mg; `;
         }
-        document.getElementById('totalTablets').innerText = totalTabletsDisplay.slice(0, -2); // Remove the last "; "
+        document.getElementById('totalTablets').innerText = totalTabletsDisplay.slice(0, -2); 
     } else {
         document.getElementById('totalTablets').innerText = `${tabletsNeeded}`;
     }
@@ -283,11 +280,14 @@ function calculate() {
     document.getElementById('sigResult').innerText = sigResults.join('; ').trim();
 }
 
-// New function to gather tapering data from the form
 function gatherTaperingData() {
     let taperingData = [];
 
+    // FIX: Iterate up to max ID, checking existence
     for (let i = 1; i <= taperStepCount; i++) {
+        // Check if step exists
+        if (!document.getElementById(`taperStep${i}`)) continue;
+
         if (currentVersion === 'variableStrength') {
             let strength = document.getElementById(`stepStrength${i}`).value;
             let dose = document.getElementById(`dose${i}`).value;
@@ -295,13 +295,13 @@ function gatherTaperingData() {
             let duration = document.getElementById(`duration${i}`).value;
             taperingData.push({ strength, dose, frequency, duration });
         } else if (currentVersion === 'timeDosePairs') {
-            // Handle the time-dose pairs version
             let duration = document.getElementById(`duration${i}`).value;
             let doseTimePairsContainer = document.getElementById(`doseTimePairs${i}`);
             let doseTimePairs = doseTimePairsContainer.getElementsByClassName('doseTimePair');
             
             let pairsData = [];
             for (let pair of doseTimePairs) {
+                // FIX: Use querySelector class lookup instead of ID lookup to be safe
                 let dose = pair.querySelector('.doseInput').value;
                 let time = pair.querySelector('select').value;
                 pairsData.push({ dose, time });
@@ -309,7 +309,6 @@ function gatherTaperingData() {
 
             taperingData.push({ duration, pairsData });
         } else {
-            // Handle the standard version
             let dose = document.getElementById(`dose${i}`).value;
             let frequency = document.getElementById(`frequency${i}`).value;
             let duration = document.getElementById(`duration${i}`).value;
@@ -340,14 +339,19 @@ function generateSchedule(taperingData, startDate) {
     let schedule = [];
     let currentDate = new Date(startDate);
 
+    // Get tablet strength reference once for use in loops
+    const tabletStrengthEl = document.getElementById('tabletStrength');
+    const tabletStrengthVal = tabletStrengthEl ? parseFloat(tabletStrengthEl.value) : 0;
+
     taperingData.forEach((step) => {
         if (currentVersion === 'variableStrength') {
             for (let i = 0; i < step.duration; i++) {
-                let tabletCount = Math.ceil(step.dose / step.strength);
-                let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
-                let tabletDescription = `${tabletCount} x ${step.strength}mg ${tabletWord}`;
+                let tabletCount = step.dose / step.strength; 
+                let formattedCount = formatTablets(tabletCount); 
+
+                let tabletWord = tabletCount !== 1 ? 'tablets' : 'tablet';
+                let tabletDescription = `${formattedCount} x ${step.strength}mg ${tabletWord}`;
                 let dosageDescription = `${step.dose}mg (${tabletDescription})`;
-                // Do not append "/day" here, handle it in the createPDF function
                 let frequencyDescription = `${step.frequency} ${step.frequency > 1 ? 'times' : 'time'}`; 
 
                 schedule.push({
@@ -358,14 +362,15 @@ function generateSchedule(taperingData, startDate) {
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         } else if (currentVersion === 'timeDosePairs') {
-            // Assume `tabletStrength` is available and is applicable for each dose
-            let tabletStrengthValue = Number(tabletStrength.value); // This needs to be defined appropriately
+             let tabletStrengthValue = tabletStrengthVal; 
         
             for (let i = 0; i < step.duration; i++) {
                 step.pairsData.forEach((pair) => {
-                    let tabletCount = Math.ceil(pair.dose / tabletStrengthValue);
-                    let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
-                    let tabletDescription = `${tabletCount} x ${tabletStrengthValue}mg ${tabletWord}`;
+                    let tabletCount = pair.dose / tabletStrengthValue;
+                    let formattedCount = formatTablets(tabletCount); 
+
+                    let tabletWord = tabletCount !== 1 ? 'tablets' : 'tablet';
+                    let tabletDescription = `${formattedCount} x ${tabletStrengthValue}mg ${tabletWord}`;
                     let dosageDescription = `${pair.dose}mg (${tabletDescription})`;
         
                     schedule.push({
@@ -374,22 +379,26 @@ function generateSchedule(taperingData, startDate) {
                         timeOfDay: pair.time
                     });
                 });
-                currentDate.setDate(currentDate.getDate() + 1); // Increment the day
+                currentDate.setDate(currentDate.getDate() + 1); 
             }
         } else {
-            // Handle the standard version
+            // STANDARD VERSION
             for (let i = 0; i < step.duration; i++) {
-                let tabletStrengthValue = Number(tabletStrength.value); 
-                let tabletCount = Math.ceil(step.dose / tabletStrengthValue);
-                let tabletWord = tabletCount > 1 ? 'tablets' : 'tablet';
-                let tabletDescription = `${tabletCount} x ${tabletStrengthValue}mg ${tabletWord}`;
+                let tabletStrengthValue = tabletStrengthVal;
+                
+                let tabletCount = step.dose / tabletStrengthValue;
+                
+                let formattedCount = formatTablets(tabletCount);
+
+                let tabletWord = tabletCount !== 1 ? 'tablets' : 'tablet';
+                let tabletDescription = `${formattedCount} x ${tabletStrengthValue}mg ${tabletWord}`;
                 let dosageDescription = `${step.dose}mg (${tabletDescription})`;
                 let frequencyDescription = `${step.frequency} ${step.frequency > 1 ? 'times' : 'time'}`;
             
                 schedule.push({
                     date: formatDate(currentDate),
                     dosage: dosageDescription,
-                    frequency: frequencyDescription // "per day" will be handled in createPDF function
+                    frequency: frequencyDescription 
                 });
                 currentDate.setDate(currentDate.getDate() + 1);
             }
@@ -483,8 +492,8 @@ function createPDF(schedule, medicationName) {
 
     doc.setFontSize(11); // Reset font size for entries
 
-    let previousDate = ""; // Keep track of the date we're on
-    let colorFlip = false; // Used to flip the color for each day
+    let previousDate = ""; 
+    let colorFlip = false; 
 
     // Add the schedule entries
     schedule.forEach((entry, index) => {
@@ -497,14 +506,13 @@ function createPDF(schedule, medicationName) {
         // Add the date and dose in separate columns
         doc.text(entry.date, dateColX, yOffset + lineHeight / 2);
     
-        // Calculate the dose text, which includes the dosage and the number of tablets
+        // Calculate the dose text
         let doseText;
         if (currentVersion === 'variableStrength') {
-            doseText = entry.dosage; // `entry.dosage` already includes all the necessary information
+            doseText = entry.dosage; 
         } else if (currentVersion === 'standard') {
-            doseText = entry.dosage; // Do not append 'mg' for the standard version, as it's already included
+            doseText = entry.dosage; 
         } else {
-            // Append 'mg' for the other versions, if necessary
             doseText = `${entry.dosage}`;
         }        
     
@@ -516,8 +524,8 @@ function createPDF(schedule, medicationName) {
         } else {
             // For standard and variableStrength, add the frequency (times per day)
             let frequencyText = currentVersion === 'variableStrength' || currentVersion === 'standard' ?
-            `${entry.frequency} per day` : // For these versions, just append 'per day'
-            entry.frequency; // For timeDosePairs, use the existing frequency text
+            `${entry.frequency} per day` : 
+            entry.frequency; 
 
             doc.text(frequencyText, timeOfDayColX, yOffset + lineHeight / 2);
         }
@@ -560,6 +568,10 @@ function calculateAndDownloadPDF() {
             alert("Please enter the tablet strength.");
             return;
         }
+        if (parseFloat(tabletStrength) <= 0) {
+             alert("Tablet strength must be greater than 0.");
+             return;
+        }
     }
 
     // Get the medication name from the input field
@@ -572,7 +584,11 @@ function calculateAndDownloadPDF() {
         return;
     }
 
-    let startDate = new Date(startDateInput);
+    const parts = startDateInput.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Javascript months are 0-11
+    const day = parseInt(parts[2], 10);
+    let startDate = new Date(year, month, day);
     if (isNaN(startDate.getTime())) {
         alert("Invalid start date. Please select a valid date.");
         return;

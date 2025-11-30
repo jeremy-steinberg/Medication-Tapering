@@ -57,7 +57,12 @@
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        const today = new Date().toISOString().split('T')[0];
+        const dateObj = new Date();
+        const year = dateObj.getFullYear();
+        // Ensure 2 digits for month and day (e.g., '05' instead of '5')
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
         document.getElementById('startDatePicker').value = today;
     });
 
